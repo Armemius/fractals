@@ -1,38 +1,88 @@
-.App {
-  text-align: center;
+@font-face {
+  font-family: 'Noto sans';
+  src:  url('./fonts/Noto Sans 1.woff2') format('woff2'),
+  url('./fonts/Noto Sans 2.woff2') format('woff2'),
+  url('./fonts/Noto Sans 3.woff2') format('woff2'),
+  url('./fonts/Noto Sans 4.woff2') format('woff2');
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+* {
+  margin: 0;
+  padding: 0;
+  text-decoration: none;
+  font-family: 'Noto sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+body {
+  background-color: black;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+canvas {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+}
+
+.menu {
+  position: absolute;
+  z-index: 10;
+  width: 250px;
+  height: 100vh;
   color: white;
+  background-color: black;
+  border-right: 2px solid white;
+  transition: all 0.3s;
 }
 
-.App-link {
-  color: #61dafb;
+.top-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 20px;
+  padding: 5px 10px;
+  margin-bottom: 10px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.top-section-logo {
+  margin-top: 5px;
+  cursor: pointer;
+}
+
+.params-section {
+  padding: 5px 10px;
+}
+
+.hidden {
+  transform: translateX(-210px);
+}
+
+.selectable {
+  padding: 1px 10px;
+  margin: 3px -10px;
+  cursor: default;
+  transition: all 0.1s ease-out;
+}
+
+.selected::after {
+  content: ' <';
+}
+
+.active.selectable:hover  {
+  color: black;
+  background-color: white;
+  cursor: pointer;
+}
+
+.section {
+  margin-bottom: 20px;
 }

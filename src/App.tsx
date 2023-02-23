@@ -1,25 +1,22 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, {useState} from 'react';
 import './App.css';
+import Viewport from "./components/Viewport";
+import {Devices, Fractals, Parameters, RenderModes} from "./Settings";
+import Menu from "./components/Menu";
 
 function App() {
+  const [params, setParams] = useState<Parameters>({
+      grid: false,
+      noise: false,
+      fractal: Fractals.MANDELBROT_SET,
+      renderMode: RenderModes.PIXELS,
+      device: Devices.CPU
+  })
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <Viewport/>
+      <Menu params={params} setParams={setParams}/>
+    </>
   );
 }
 
