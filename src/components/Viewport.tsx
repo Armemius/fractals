@@ -1,5 +1,5 @@
 import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
-import init, {greet, add, InitOutput as FractalsModule} from "wasm";
+import init, {InitOutput as FractalsModule} from "wasm";
 
 const useWindowSize = () => {
     const [size, setSize] = useState([0, 0]);
@@ -32,8 +32,8 @@ const Viewport = () => {
 
     const mouseHandler = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
         if (active) {
-            setOffsetX(offsetX + event.movementX);
-            setOffsetY(offsetY + event.movementY);
+            setOffsetX(offsetX + event.movementX * scale);
+            setOffsetY(offsetY + event.movementY * scale);
         }
     }
 
@@ -41,14 +41,13 @@ const Viewport = () => {
         if (event.deltaY > 0) {
             setScale(scale * 1.1)
         } else if (event.deltaY < 0) {
-            setScale(scale * 0.909)
+            setScale(scale * 0.9)
         }
     }
 
     useEffect(() => {
         if (!wasm)
             return;
-        console.log(wasm.add(666.66, 22.44));
         const canvas = canvasRef.current;
         if (!canvas)
             return;
@@ -74,8 +73,8 @@ const Viewport = () => {
     }, [width, height, wasm])
 
     useEffect(() => {
-        const zeroX = (width / 2 + offsetX * scale) | 0;
-        const zeroY = (height / 2 + offsetY * scale) | 0;
+        const zeroX = (width / 2 + offsetX / scale) | 0;
+        const zeroY = (height / 2 + offsetY / scale) | 0;
         const canvas = canvasRef.current;
         if (!canvas)
             return;
@@ -95,9 +94,32 @@ const Viewport = () => {
             pixelData[index + 3] = 255;
         }
 
+        const px2complex = (x: number, y: number) => {
+            return {
+                x: (x - zeroX) * scale / 100,
+                y: (y - zeroY) * scale / 100
+            }
+        }
+
         let frameId: number;
         const render = () => {
-            setPixel(zeroX, zeroY, 255, 255, 255);
+            for (let it = 0; it < width * height / 45; ++it) {
+                const x = Math.random() * width | 0;
+                const y = Math.random() * height | 0;
+                const {x: xCoord, y: yCoord} = px2complex(x, y);
+                let k = wasm!.iterate_mandelbrot(xCoord, yCoord, 100)
+                if (k > 0.999) {
+                    setPixel(x, y, 0, 0, 0);
+                } else if (k > 0.75) {
+                    setPixel(x, y, 75 * k, 0, 0);
+                } else if (k > 0.5) {
+                    setPixel(x, y, 100 * k, 0, 100 * k);
+                } else if (k > 0.25) {
+                    setPixel(x, y, 255, 0, 255 * k);
+                } else {
+                    setPixel(x, y, 1000 * k, 0, 1000 * k);
+                }
+            }
             ctx.putImageData(buffer, 0, 0);
             frameId = requestAnimationFrame(render);
         }
@@ -107,7 +129,7 @@ const Viewport = () => {
         return () => {
           cancelAnimationFrame(frameId);
         };
-    }, [scale, pixelBuffer, width, height, offsetX, offsetY])
+    }, [scale, pixelBuffer, width, height, offsetX, offsetY, wasm])
 
     return (
         <canvas width={window.innerWidth}
