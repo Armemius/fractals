@@ -1,4 +1,5 @@
 import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
+import init, {greet, add, InitOutput as FractalsModule} from "wasm";
 
 const useWindowSize = () => {
     const [size, setSize] = useState([0, 0]);
@@ -21,6 +22,13 @@ const Viewport = () => {
     const [offsetX, setOffsetX] = useState(0);
     const [offsetY, setOffsetY] = useState(0);
     const [scale, setScale] = useState(1);
+    const [wasm, setWasm] = useState<FractalsModule | null>(null);
+
+    useEffect(() => {
+        init().then((module) => {
+            setWasm(module);
+        })
+    }, [])
 
     const mouseHandler = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
         if (active) {
@@ -31,13 +39,16 @@ const Viewport = () => {
 
     const wheelHandler = (event: React.WheelEvent<HTMLCanvasElement>) => {
         if (event.deltaY > 0) {
-            setScale(scale * 0.85)
+            setScale(scale * 1.1)
         } else if (event.deltaY < 0) {
-            setScale(scale / 0.85)
+            setScale(scale * 0.909)
         }
     }
 
     useEffect(() => {
+        if (!wasm)
+            return;
+        console.log(wasm.add(666.66, 22.44));
         const canvas = canvasRef.current;
         if (!canvas)
             return;
@@ -60,7 +71,7 @@ const Viewport = () => {
             ctx.putImageData(imageData, 0, 0);
         }
 
-    }, [width, height])
+    }, [width, height, wasm])
 
     useEffect(() => {
         const zeroX = (width / 2 + offsetX * scale) | 0;

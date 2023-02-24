@@ -17,9 +17,11 @@
     "react-icons": "^4.7.1",
     "react-scripts": "5.0.1",
     "typescript": "^4.9.5",
+    "wasm": "file:wasm/pkg",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "build:wasm": "cd wasm && wasm-pack build --target web --out-dir pkg && npm install ./pkg",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
     "start": "react-scripts start",

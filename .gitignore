@@ -22,3 +22,9 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# rust
+wasm/target
+wasm/debug
+wasm/Cargo.lock
+wasm/pkg
