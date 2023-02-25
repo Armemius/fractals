@@ -43,9 +43,19 @@ pub fn render(
     let zero_y = height as f64 / 2.0 + (offset_y as f64 / scale);
     let update_pixel = |pixels: &mut [u8], rng: &mut Xoroshiro128, x: u32, y: u32| {
         let mut color: (u8, u8, u8) = (0, 0, 0);
-        let (xCoord, yCoord) = px2complex(x, y, zero_x, zero_y, scale);
+        let (x_coord, y_coord) = px2complex(x, y, zero_x, zero_y, scale);
         if fractal == 0 {
-            color = paint_fractal(xCoord, yCoord, 100);
+            let dev = iterate_mandelbrot(x_coord, y_coord, 100);
+            color = paint_fractal(dev);
+        } else if fractal == 1 {
+            let dev = iterate_julia(x_coord, y_coord, 100);
+            color = paint_fractal(dev);
+        } else if fractal == 2 {
+            let dev = iterate_flaming_ship(x_coord, y_coord, 100);
+            color = paint_fractal(dev);
+        } else if fractal == 3 {
+            let dev = iterate_newton(x_coord, y_coord, 100);
+            color = paint_fractal(dev);
         }
         let index = ((x + y * width) * 4) as usize;
         if grid && (x % 3 == 0 || y % 3 == 0) {
@@ -67,7 +77,6 @@ pub fn render(
     } else if render_mode == 1 {
         for it in 0..width {
             for jt in 0..height {
-
                 update_pixel(pixels, &mut rng, it, jt);
             }
         }
@@ -123,8 +132,118 @@ fn iterate_mandelbrot(re: f64, im: f64, max: u32) -> f64 {
     return 1.0;
 }
 
-fn paint_fractal(re: f64, im: f64, max: u32) -> (u8, u8, u8) {
-    let dev = iterate_mandelbrot(re, im, max);
+fn iterate_julia(re: f64, im: f64, max: u32) -> f64 {
+    let c_re = -0.74543;
+    let c_im = 0.11301;
+    let mut z_re = re;
+    let mut z_im = im;
+    for iters in 0..max {
+        let z_re_sq = z_re * z_re;
+        let z_im_sq = z_im * z_im;
+        if z_re_sq + z_im_sq > 4.0 {
+            return iters as f64 / max as f64;
+        }
+        let z_re_new = z_re_sq - z_im_sq + c_re;
+        let z_im_new = 2.0 * z_re * z_im + c_im;
+        z_re = z_re_new;
+        z_im = z_im_new;
+    }
+    return 1.0;
+}
+
+fn iterate_flaming_ship(re: f64, im: f64, max: u32) -> f64 {
+    let mut z_re = re;
+    let mut z_im = im;
+
+    for iters in 0..max {
+        let z_re_new = z_re * z_re - z_im * z_im + re;
+        let z_im_new = (2.0 * z_re * z_im).abs() + im;
+
+        if z_re_new * z_re_new + z_im_new * z_im_new > 4.0 {
+            return iters as f64 / max as f64;
+        }
+
+        z_re = z_re_new;
+        z_im = z_im_new;
+    }
+
+    return 1.0;
+}
+
+fn iterate_newton(re: f64, im: f64, max: u32) -> f64 {
+    let mut z_prev = (0.0, 0.0);
+    let mut z_curr = (re, im);
+
+    for iters in 0..max {
+        let derivative = get_derivative(z_curr);
+        if derivative.0 == 0.0 && derivative.1 == 0.0 {
+            return 1.0;
+        }
+
+        let delta = divide(compute_polynomial(z_curr), derivative);
+        z_prev = z_curr;
+        z_curr = subtract(z_curr, delta);
+
+        const THRESHOLD: f64 = 0.001;
+        if get_distance(z_curr, z_prev) < THRESHOLD {
+            return iters as f64 / max as f64;
+        }
+    }
+    return 1.0;
+}
+
+fn get_derivative(z: (f64, f64)) -> (f64, f64) {
+    let epsilon = 0.00001;
+    let z_plus_epsilon = (z.0 + epsilon, z.1);
+    let polynomial_at_z = compute_polynomial(z);
+    let polynomial_at_z_plus_epsilon = compute_polynomial(z_plus_epsilon);
+    let difference = subtract(polynomial_at_z_plus_epsilon, polynomial_at_z);
+    return ((difference.0 / epsilon), (difference.1 / epsilon));
+}
+
+fn compute_polynomial(z: (f64, f64)) -> (f64, f64) {
+    let mut result = (1.0, 0.0);
+
+    const ROOTS: [(f64, f64); 3] = [
+        (1.0, 0.0),
+        (-0.5, 0.866),
+        (-0.5, -0.866),
+    ];
+
+    for root in &ROOTS {
+        let term = subtract(z, *root);
+        result = multiply(result, term);
+    }
+
+    return result;
+}
+
+fn divide(a: (f64, f64), b: (f64, f64)) -> (f64, f64) {
+    let denominator = b.0 * b.0 + b.1 * b.1;
+    let re = (a.0 * b.0 + a.1 * b.1) / denominator;
+    let im = (a.1 * b.0 - a.0 * b.1) / denominator;
+    return (re, im);
+}
+
+fn subtract(a: (f64, f64), b: (f64, f64)) -> (f64, f64) {
+    let re = a.0 - b.0;
+    let im = a.1 - b.1;
+    return (re, im);
+}
+
+fn multiply(a: (f64, f64), b: (f64, f64)) -> (f64, f64) {
+    let re = a.0 * b.0 - a.1 * b.1;
+    let im = a.0 * b.1 + a.1 * b.0;
+    return (re, im);
+}
+
+fn get_distance(a: (f64, f64), b: (f64, f64)) -> f64 {
+    let dx = a.0 - b.0;
+    let dy = a.1 - b.1;
+    return (dx * dx + dy * dy).sqrt()
+}
+
+fn paint_fractal(dev: f64) -> (u8, u8, u8) {
     if dev == 1.0 {
         return (0, 0, 0);
     }
