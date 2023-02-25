@@ -14,7 +14,7 @@ function App() {
   })
   return (
     <>
-      <Viewport/>
+      <Viewport params={params}/>
       <Menu params={params} setParams={setParams}/>
     </>
   );

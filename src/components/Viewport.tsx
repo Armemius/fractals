@@ -1,5 +1,6 @@
 import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
-import init, {InitOutput as FractalsModule} from "wasm";
+import init, {render as renderCanvas, reset} from "wasm";
+import {Parameters, RenderModes} from "../Settings";
 
 const useWindowSize = () => {
     const [size, setSize] = useState([0, 0]);
@@ -14,7 +15,7 @@ const useWindowSize = () => {
     return size;
 }
 
-const Viewport = () => {
+const Viewport = (props: { params: Parameters }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [pixelBuffer, setPixelBuffer] = useState<ImageData | null>(null);
     const [active, setActive] = useState(false);
@@ -22,13 +23,7 @@ const Viewport = () => {
     const [offsetX, setOffsetX] = useState(0);
     const [offsetY, setOffsetY] = useState(0);
     const [scale, setScale] = useState(1);
-    const [wasm, setWasm] = useState<FractalsModule | null>(null);
-
-    useEffect(() => {
-        init().then((module) => {
-            setWasm(module);
-        })
-    }, [])
+    const [ready, setReady] = useState(false);
 
     const mouseHandler = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
         if (active) {
@@ -45,8 +40,16 @@ const Viewport = () => {
         }
     }
 
+    // Initialize wasm
     useEffect(() => {
-        if (!wasm)
+        init().then(() => {
+            setReady(true);
+        })
+    }, [])
+
+    // Handle viewport changes
+    useEffect(() => {
+        if (!ready)
             return;
         const canvas = canvasRef.current;
         if (!canvas)
@@ -57,24 +60,21 @@ const Viewport = () => {
         if (width > 0 && height > 0) {
             const imageData = ctx.createImageData(width, height);
             setPixelBuffer(imageData);
-            const pixelData = imageData.data;
-            for (let it = 0; it < width; ++it) {
-                for (let jt = 0; jt < height; ++jt) {
-                    const index = (it + jt * canvas.width) * 4;
-                    pixelData[index] = 0;
-                    pixelData[index + 1] = 0;
-                    pixelData[index + 2] = 0;
-                    pixelData[index + 3] = 255;
-                }
-            }
+            reset(imageData.data as unknown as Uint8Array);
             ctx.putImageData(imageData, 0, 0);
         }
 
-    }, [width, height, wasm])
+    }, [width, height, ready, props.params.fractal])
 
+    // Handle fractal changes
     useEffect(() => {
-        const zeroX = (width / 2 + offsetX / scale) | 0;
-        const zeroY = (height / 2 + offsetY / scale) | 0;
+        setScale(1);
+        setOffsetX(0);
+        setOffsetY(0);
+    }, [props.params.fractal])
+
+    // Render
+    useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas)
             return;
@@ -85,43 +85,28 @@ const Viewport = () => {
         if (!buffer)
             return;
         const pixelData = buffer.data;
-
-        const setPixel = (x: number, y: number, r: number, g: number, b: number) => {
-            const index = (x + y * canvas.width) * 4;
-            pixelData[index] = r;
-            pixelData[index + 1] = g;
-            pixelData[index + 2] = b;
-            pixelData[index + 3] = 255;
-        }
-
-        const px2complex = (x: number, y: number) => {
-            return {
-                x: (x - zeroX) * scale / 100,
-                y: (y - zeroY) * scale / 100
-            }
-        }
+        const fractal = props.params.fractal;
+        const renderMode = props.params.renderMode;
+        const useGrid = props.params.grid;
+        const useNoise = props.params.noise;
 
         let frameId: number;
         const render = () => {
-            for (let it = 0; it < width * height / 45; ++it) {
-                const x = Math.random() * width | 0;
-                const y = Math.random() * height | 0;
-                const {x: xCoord, y: yCoord} = px2complex(x, y);
-                let k = wasm!.iterate_mandelbrot(xCoord, yCoord, 100)
-                if (k > 0.999) {
-                    setPixel(x, y, 0, 0, 0);
-                } else if (k > 0.75) {
-                    setPixel(x, y, 75 * k, 0, 0);
-                } else if (k > 0.5) {
-                    setPixel(x, y, 100 * k, 0, 100 * k);
-                } else if (k > 0.25) {
-                    setPixel(x, y, 255, 0, 255 * k);
-                } else {
-                    setPixel(x, y, 1000 * k, 0, 1000 * k);
-                }
-            }
+            renderCanvas(pixelData as unknown as Uint8Array,
+                fractal.valueOf(),
+                renderMode.valueOf(),
+                width,
+                height,
+                useGrid,
+                useNoise,
+                scale,
+                offsetX,
+                offsetY,
+                window.performance.now());
             ctx.putImageData(buffer, 0, 0);
-            frameId = requestAnimationFrame(render);
+            if (renderMode !== RenderModes.NONE && renderMode !== RenderModes.FRAME) {
+                frameId = requestAnimationFrame(render);
+            }
         }
         frameId = requestAnimationFrame(render);
 
@@ -129,7 +114,7 @@ const Viewport = () => {
         return () => {
           cancelAnimationFrame(frameId);
         };
-    }, [scale, pixelBuffer, width, height, offsetX, offsetY, wasm])
+    }, [scale, pixelBuffer, width, height, offsetX, offsetY, ready, props.params])
 
     return (
         <canvas width={window.innerWidth}

@@ -21,7 +21,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "build:wasm": "cd wasm && wasm-pack build --target web --out-dir pkg && npm install ./pkg",
+    "build:wasm": "cd wasm && wasm-pack build --target web --out-dir pkg && cd .. && npm install ./wasm/pkg",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
     "start": "react-scripts start",
