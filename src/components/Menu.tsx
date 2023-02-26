@@ -51,11 +51,12 @@ const Menu = (props: {params: Parameters, setParams: React.Dispatch<React.SetSta
                     <Selectable selected={props.params.renderMode === RenderModes.ROWS} active={isOpen} name={"Random rows"} action={updateParam('renderMode', RenderModes.ROWS)}/>
                     <Selectable selected={props.params.renderMode === RenderModes.COLUMNS} active={isOpen} name={"Random columns"} action={updateParam('renderMode', RenderModes.COLUMNS)}/>
                 </div>
-                <div className="section">
-                    <h2>Device</h2>
-                    <Selectable selected={props.params.device === Devices.CPU} active={isOpen} name={"CPU"} action={updateParam('device', Devices.CPU)}/>
-                    <Selectable selected={props.params.device === Devices.GPU} active={isOpen} name={"GPU"} action={updateParam('device', Devices.GPU)}/>
-                </div>
+                {/* DEVICES SELECTION MAY BE AVAILABLE IN THE FUTURE */}
+                {/*<div className="section">*/}
+                {/*    <h2>Device</h2>*/}
+                {/*    <Selectable selected={props.params.device === Devices.CPU} active={isOpen} name={"CPU"} action={updateParam('device', Devices.CPU)}/>*/}
+                {/*    <Selectable selected={props.params.device === Devices.GPU} active={isOpen} name={"GPU"} action={updateParam('device', Devices.GPU)}/>*/}
+                {/*</div>*/}
             </div>
         </div>
     );

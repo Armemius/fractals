@@ -1,6 +1,5 @@
 extern crate xorshift;
 
-use std::thread;
 use wasm_bindgen::prelude::*;
 use xorshift::{Rand, Rng, SeedableRng, SplitMix64, Xoroshiro128};
 
@@ -134,8 +133,8 @@ fn iterate_mandelbrot(re: f64, im: f64, max: u32) -> f64 {
 }
 
 fn iterate_julia(re: f64, im: f64, max: u32) -> f64 {
-    let c_re = -0.74543;
-    let c_im = 0.11301;
+    let c_re = -0.67;
+    let c_im = -0.36;
     let mut z_re = re;
     let mut z_im = im;
     for iters in 0..max {
@@ -263,5 +262,3 @@ fn paint_fractal(dev: f64) -> (u8, u8, u8) {
     let delta = dev * 3.957;
     return ((255.0 * delta) as u8, (170.0 * delta) as u8, 0);
 }
-
-// GPU
