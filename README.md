@@ -1,5 +1,9 @@
 # Fractals <a href="https://www.typescriptlang.org/" title="Typescript"><img src="https://github.com/get-icon/geticon/raw/master/icons/typescript-icon.svg" alt="Typescript" width="21px" height="21px"></a> <a href="https://reactjs.org/" title="React"><img src="https://github.com/get-icon/geticon/raw/master/icons/react.svg" alt="React" width="21px" height="21px"></a> <a href="https://www.rust-lang.org/" title="Rust"><img src="https://github.com/get-icon/geticon/raw/master/icons/rust.svg" alt="Rust" width="21px" height="21px"></a> <a href="https://webassembly.org/" title="Wasm"><img src="https://github.com/get-icon/geticon/raw/master/icons/webassembly.svg" alt="Typescript" width="21px" height="21px"></a>
-I made a project for fractals a few years ago, and since lots of time passed I decided to recreate this using new technologies and languages (the last version was written with C++ using SFML library) to make them more portable. 
+I made a project for fractals a few years ago, and since lots of time have passed I decided to recreate this using new technologies and languages (the last version was written with C++ using SFML library) to make them more portable. 
+
+This version is written via <b>React</b> library with <b>Typescript</b> as a main language, and since it is not very performant and fractals use a lots of calculations, I decided to use <b>Webassembly</b> with <b>Rust</b> <strike>so I can write blazingly fast code</strike>
+
+At the moment all calculations are performed on CPU, it might be a big deal if I would leverage the GPU, but <b>WGPU</b> is pretty complex, so maybe in the future ;-)
 
 Now you can browse what I've done using Github pages:<br>
 <a href="https://armemius.github.io/fractals/" style="text-decoration: none; color: #34a853">armemius.github.io/fractals</a>
