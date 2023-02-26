@@ -4,6 +4,7 @@ use std::thread;
 use wasm_bindgen::prelude::*;
 use xorshift::{Rand, Rng, SeedableRng, SplitMix64, Xoroshiro128};
 
+// CPU
 #[wasm_bindgen]
 pub fn render(
     // Array with raw pixel data
@@ -262,3 +263,5 @@ fn paint_fractal(dev: f64) -> (u8, u8, u8) {
     let delta = dev * 3.957;
     return ((255.0 * delta) as u8, (170.0 * delta) as u8, 0);
 }
+
+// GPU

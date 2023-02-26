@@ -1,6 +1,7 @@
 import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import init, {render as renderCanvas, reset} from "wasm";
 import {Parameters, RenderModes} from "../Settings";
+import {useGesture, usePinch} from '@use-gesture/react';
 
 const useWindowSize = () => {
     const [size, setSize] = useState([0, 0]);
@@ -18,19 +19,38 @@ const useWindowSize = () => {
 const Viewport = (props: { params: Parameters }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [pixelBuffer, setPixelBuffer] = useState<ImageData | null>(null);
-    const [active, setActive] = useState(false);
     const [width, height] = useWindowSize();
     const [offsetX, setOffsetX] = useState(0);
     const [offsetY, setOffsetY] = useState(0);
     const [scale, setScale] = useState(1);
     const [ready, setReady] = useState(false);
+    // Movement
+    const [shiftX, setShiftX] = useState(0);
+    const [shiftY, setShiftY] = useState(0);
+    const [pitch, setPitch] = useState<number | null>(null);
 
-    const mouseHandler = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
-        if (active) {
-            setOffsetX(offsetX + event.movementX * scale);
-            setOffsetY(offsetY + event.movementY * scale);
+    useGesture({
+        onDrag: ({ offset: [dx, dy]}) => {
+            setOffsetX(offsetX + (dx - shiftX) * scale);
+            setOffsetY(offsetY + (dy - shiftY) * scale);
+            setShiftX(dx);
+            setShiftY(dy);
+        },
+        onPinch: ({ offset: [d]}) => {
+            console.log(d);
+            if (pitch) {
+                if (pitch > d) {
+                    setScale(scale * 1.05)
+                } else {
+                    setScale(scale * 0.952)
+                }
+            }
+            setPitch(d);
         }
-    }
+    }, {
+        target: canvasRef,
+        eventOptions: { passive: false }
+    })
 
     const wheelHandler = (event: React.WheelEvent<HTMLCanvasElement>) => {
         if (event.deltaY > 0) {
@@ -120,10 +140,6 @@ const Viewport = (props: { params: Parameters }) => {
         <canvas width={window.innerWidth}
                 height={window.innerHeight}
                 ref={canvasRef}
-                onMouseMove={mouseHandler}
-                onMouseDown={() => setActive(true)}
-                onMouseUp={() => setActive(false)}
-                onMouseLeave={() => setActive(false)}
                 onWheel={wheelHandler}/>
     );
 };
