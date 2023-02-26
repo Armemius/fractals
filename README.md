@@ -16,7 +16,7 @@ Now you can browse what I've done using Github pages:<br>
 
 ## Settings
 ### Visual
-* Grid - applies grid to the viewport, which reduces the number of calculations for fractal each frame, improves speed by quality
+* Grid - applies grid to the viewport, which reduces the number of calculations for fractal each frame, improves performance at the expense of quality
 * Noise - same as a grid, but pixels to skip are chosen randomly
 ### Render modes
 * None - pretty self-explanatory, just doesn't render at all
