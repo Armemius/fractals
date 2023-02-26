@@ -1,18 +1,18 @@
 {
   "files": {
     "main.css": "/fractals/static/css/main.5de9913f.css",
-    "main.js": "/fractals/static/js/main.cdb18d02.js",
+    "main.js": "/fractals/static/js/main.f79d9582.js",
     "static/media/Noto Sans 1.woff2": "/fractals/static/media/Noto Sans 1.e6c5088b5e16fb24bef1.woff2",
-    "static/media/wasm_bg.wasm": "/fractals/static/media/wasm_bg.ab48b23c3a4dd58cac7e.wasm",
+    "static/media/wasm_bg.wasm": "/fractals/static/media/wasm_bg.c9b9a733da335e5d874d.wasm",
     "static/media/Noto Sans 4.woff2": "/fractals/static/media/Noto Sans 4.ee3764412d1a1ee16a4e.woff2",
     "static/media/Noto Sans 2.woff2": "/fractals/static/media/Noto Sans 2.668fa41f4ecaf0c7ea97.woff2",
     "static/media/Noto Sans 3.woff2": "/fractals/static/media/Noto Sans 3.ac040a06c437eb0c3a58.woff2",
     "index.html": "/fractals/index.html",
     "main.5de9913f.css.map": "/fractals/static/css/main.5de9913f.css.map",
-    "main.cdb18d02.js.map": "/fractals/static/js/main.cdb18d02.js.map"
+    "main.f79d9582.js.map": "/fractals/static/js/main.f79d9582.js.map"
   },
   "entrypoints": [
     "static/css/main.5de9913f.css",
-    "static/js/main.cdb18d02.js"
+    "static/js/main.f79d9582.js"
   ]
 }
