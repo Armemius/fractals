@@ -3,7 +3,9 @@ I made a project for fractals a few years ago, and since lots of time have passe
 
 This version is written via <b>React</b> library with <b>Typescript</b> as a main language, and since it is not very performant and fractals use a lots of calculations, I decided to use <b>Webassembly</b> with <b>Rust</b> <strike>so I can write blazingly fast code</strike>
 
-At the moment all calculations are performed on CPU, it might be a big deal if I would leverage the GPU, but <b>WGPU</b> is pretty complex, so maybe in the future ;-)
+~~At the moment all calculations are performed on CPU, it might be a big deal if I would leverage the GPU, but <b>WGPU</b> is pretty complex, so maybe in the future ;-)~~
+
+**UPD:** Finally, an ability to use GPU was added, GPU computations use canvas as WebGPU texture and GLSL shaders for render. You can always switch between devices to see the difference
 
 Now you can browse what I've done using Github pages:<br>
 <a href="https://armemius.github.io/fractals/" style="text-decoration: none; color: #34a853">armemius.github.io/fractals</a>

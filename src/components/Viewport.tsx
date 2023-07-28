@@ -1,7 +1,7 @@
 import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import init, {render as renderCanvas, reset} from "wasm";
-import {Parameters, RenderModes} from "../Settings";
-import {useGesture, usePinch} from '@use-gesture/react';
+import {Devices, Parameters, RenderModes} from "../Settings";
+import {useGesture} from '@use-gesture/react';
 
 const useWindowSize = () => {
     const [size, setSize] = useState([0, 0]);
@@ -9,6 +9,7 @@ const useWindowSize = () => {
         function updateSize() {
             setSize([window.innerWidth, window.innerHeight]);
         }
+
         window.addEventListener('resize', updateSize);
         updateSize();
         return () => window.removeEventListener('resize', updateSize);
@@ -16,8 +17,35 @@ const useWindowSize = () => {
     return size;
 }
 
+function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+    const shader = gl.createShader(type)!!;
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error('Error compiling shader:', gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+        return null;
+    }
+    return shader;
+}
+
+function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader) {
+    const program = gl.createProgram()!!;
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        console.error('Error linking program:', gl.getProgramInfoLog(program));
+        gl.deleteProgram(program);
+        return null;
+    }
+    return program;
+}
+
 const Viewport = (props: { params: Parameters }) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const cpuCanvasRef = useRef<HTMLCanvasElement>(null);
+    const gpuCanvasRef = useRef<HTMLCanvasElement>(null);
+    const [program, setProgram] = useState<WebGLProgram | null>(null);
     const [pixelBuffer, setPixelBuffer] = useState<ImageData | null>(null);
     const [width, height] = useWindowSize();
     const [offsetX, setOffsetX] = useState(0);
@@ -30,13 +58,13 @@ const Viewport = (props: { params: Parameters }) => {
     const [pitch, setPitch] = useState<number | null>(null);
 
     useGesture({
-        onDrag: ({ offset: [dx, dy]}) => {
+        onDrag: ({offset: [dx, dy]}) => {
             setOffsetX(offsetX + (dx - shiftX) * scale);
             setOffsetY(offsetY + (dy - shiftY) * scale);
             setShiftX(dx);
             setShiftY(dy);
         },
-        onPinch: ({ offset: [d]}) => {
+        onPinch: ({offset: [d]}) => {
             console.log(d);
             if (pitch) {
                 if (pitch > d) {
@@ -48,8 +76,8 @@ const Viewport = (props: { params: Parameters }) => {
             setPitch(d);
         }
     }, {
-        target: canvasRef,
-        eventOptions: { passive: false }
+        target: cpuCanvasRef,
+        eventOptions: {passive: false}
     })
 
     const wheelHandler = (event: React.WheelEvent<HTMLCanvasElement>) => {
@@ -71,7 +99,7 @@ const Viewport = (props: { params: Parameters }) => {
     useEffect(() => {
         if (!ready)
             return;
-        const canvas = canvasRef.current;
+        const canvas = cpuCanvasRef.current;
         if (!canvas)
             return;
         const ctx = canvas.getContext('2d');
@@ -86,6 +114,7 @@ const Viewport = (props: { params: Parameters }) => {
 
     }, [width, height, ready, props.params.fractal])
 
+
     // Handle fractal changes
     useEffect(() => {
         setScale(1);
@@ -95,9 +124,12 @@ const Viewport = (props: { params: Parameters }) => {
 
     // Render
     useEffect(() => {
-        const canvas = canvasRef.current;
+        const canvas = cpuCanvasRef.current;
         if (!canvas)
             return;
+        if (props.params.device !== Devices.CPU) {
+            return
+        }
         const ctx = canvas.getContext('2d');
         if (!ctx)
             return;
@@ -132,15 +164,101 @@ const Viewport = (props: { params: Parameters }) => {
 
 
         return () => {
-          cancelAnimationFrame(frameId);
+            cancelAnimationFrame(frameId);
         };
     }, [scale, pixelBuffer, width, height, offsetX, offsetY, ready, props.params])
 
+    // GPU Canvas setup
+    useEffect(() => {
+        const canvas = gpuCanvasRef.current;
+        if (!canvas)
+            return;
+        const gl = canvas.getContext('webgl');
+        if (!gl) {
+            return;
+        }
+        const vertexShaderSource = document?.getElementById('vertexShader')?.textContent;
+        const fragmentShaderSource = document?.getElementById('fragmentShader')?.textContent;
+
+        if (!vertexShaderSource || !fragmentShaderSource) {
+            return;
+        }
+
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource)!!;
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)!!;
+
+        const program = createProgram(gl, vertexShader, fragmentShader)!!;
+        gl.useProgram(program);
+
+        const positionLocation = gl.getAttribLocation(program, 'position');
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        const positions = [
+            -1, -1,
+            -1, 1,
+            1, 1,
+            1, -1,
+        ];
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(positionLocation);
+        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+        setProgram(program);
+    }, [])
+
+    useEffect(() => {
+        const canvas = gpuCanvasRef.current;
+        if (!canvas)
+            return;
+        if (props.params.device !== Devices.GPU) {
+            return;
+        }
+        const gl = canvas.getContext('webgl');
+        if (!gl || !program) {
+            return;
+        }
+
+        const resolutionLocation = gl.getUniformLocation(program, 'resolution')!!;
+        gl.uniform2f(resolutionLocation, width, height);
+
+        const offsetLocation = gl.getUniformLocation(program, 'offset')!!;
+        gl.uniform2f(offsetLocation, offsetX, offsetY);
+
+        const scaleLocation = gl.getUniformLocation(program, 'scale')!!;
+        gl.uniform1f(scaleLocation, scale);
+
+        const modeLocation = gl.getUniformLocation(program, 'mode')!!;
+        gl.uniform1i(modeLocation, props.params.fractal.valueOf());
+
+        const timeLocation = gl.getUniformLocation(program, 'time')!!;
+        gl.uniform1f(timeLocation, window.performance.now());
+
+        const gridLocation = gl.getUniformLocation(program, 'grid')!!;
+        gl.uniform1i(gridLocation, props.params.grid ? 1 : 0);
+
+        const noiseLocation = gl.getUniformLocation(program, 'noise')!!;
+        gl.uniform1i(noiseLocation, props.params.noise ? 1 : 0);
+
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+
+    }, [scale, pixelBuffer, width, height, offsetX, offsetY, ready, props.params])
+
     return (
-        <canvas width={window.innerWidth}
-                height={window.innerHeight}
-                ref={canvasRef}
-                onWheel={wheelHandler}/>
+        <>
+            <canvas width={window.innerWidth}
+                    height={window.innerHeight}
+                    ref={gpuCanvasRef}
+                    onWheel={wheelHandler}
+                    style={{opacity: props.params.device === Devices.GPU ? "100%" : "0"}}
+            />
+            <canvas width={window.innerWidth}
+                    height={window.innerHeight}
+                    ref={cpuCanvasRef}
+                    onWheel={wheelHandler}
+                    style={{opacity: props.params.device === Devices.CPU ? "100%" : "0"}}
+            />
+        </>
     );
 };
 

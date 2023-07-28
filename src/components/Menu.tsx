@@ -39,24 +39,27 @@ const Menu = (props: {params: Parameters, setParams: React.Dispatch<React.SetSta
                     <Selectable selected={props.params.fractal === Fractals.NEWTON_FRACTAL} active={isOpen} name={"Newton fractal"} action={updateParam('fractal', Fractals.NEWTON_FRACTAL)}/>
                 </div>
                 <div className="section">
+                    <h2>Devices</h2>
+                    <Selectable selected={props.params.device === Devices.CPU} active={isOpen} name={"CPU"} action={updateParam('device', Devices.CPU)}/>
+                    <Selectable selected={props.params.device === Devices.GPU} active={isOpen} name={"GPU"} action={updateParam('device', Devices.GPU)}/>
+                </div>
+                <div className="section">
                     <h2>Visuals</h2>
                     <Selectable selected={props.params.grid} active={isOpen} name={"Grid"} action={updateParam('grid', !props.params.grid)}/>
                     <Selectable selected={props.params.noise} active={isOpen} name={"Noise"} action={updateParam('noise', !props.params.noise)}/>
                 </div>
-                <div className="section">
-                    <h2>Render mode</h2>
-                    <Selectable selected={props.params.renderMode === RenderModes.NONE} active={isOpen} name={"None"} action={updateParam('renderMode', RenderModes.NONE)}/>
-                    <Selectable selected={props.params.renderMode === RenderModes.FRAME} active={isOpen} name={"Frame"} action={updateParam('renderMode', RenderModes.FRAME)}/>
-                    <Selectable selected={props.params.renderMode === RenderModes.PIXELS} active={isOpen} name={"Random pixels"} action={updateParam('renderMode', RenderModes.PIXELS)}/>
-                    <Selectable selected={props.params.renderMode === RenderModes.ROWS} active={isOpen} name={"Random rows"} action={updateParam('renderMode', RenderModes.ROWS)}/>
-                    <Selectable selected={props.params.renderMode === RenderModes.COLUMNS} active={isOpen} name={"Random columns"} action={updateParam('renderMode', RenderModes.COLUMNS)}/>
-                </div>
-                {/* DEVICES SELECTION MAY BE AVAILABLE IN THE FUTURE */}
-                {/*<div className="section">*/}
-                {/*    <h2>Device</h2>*/}
-                {/*    <Selectable selected={props.params.device === Devices.CPU} active={isOpen} name={"CPU"} action={updateParam('device', Devices.CPU)}/>*/}
-                {/*    <Selectable selected={props.params.device === Devices.GPU} active={isOpen} name={"GPU"} action={updateParam('device', Devices.GPU)}/>*/}
-                {/*</div>*/}
+                {   props.params.device === Devices.CPU ?
+                    <div className="section">
+                        <h2>Render mode</h2>
+                        <Selectable selected={props.params.renderMode === RenderModes.NONE} active={isOpen} name={"None"} action={updateParam('renderMode', RenderModes.NONE)}/>
+                        <Selectable selected={props.params.renderMode === RenderModes.FRAME} active={isOpen} name={"Frame"} action={updateParam('renderMode', RenderModes.FRAME)}/>
+                        <Selectable selected={props.params.renderMode === RenderModes.PIXELS} active={isOpen} name={"Random pixels"} action={updateParam('renderMode', RenderModes.PIXELS)}/>
+                        <Selectable selected={props.params.renderMode === RenderModes.ROWS} active={isOpen} name={"Random rows"} action={updateParam('renderMode', RenderModes.ROWS)}/>
+                        <Selectable selected={props.params.renderMode === RenderModes.COLUMNS} active={isOpen} name={"Random columns"} action={updateParam('renderMode', RenderModes.COLUMNS)}/>
+                    </div>
+                    :
+                    <></>
+                }
             </div>
         </div>
     );
