@@ -1,1 +1,205 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><link rel="icon" href="/fractals/favicon.ico"/><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/><meta name="theme-color" content="#000000"/><meta name="description" content="Website that allows you to take a look at some of the fractals"/><title>Armemius' fractals</title><script defer="defer" src="/fractals/static/js/main.f79d9582.js"></script><link href="/fractals/static/css/main.5de9913f.css" rel="stylesheet"></head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div></body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><link rel="icon" href="/fractals/favicon.ico"/><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/><meta name="theme-color" content="#000000"/><meta name="description" content="Website that allows you to take a look at some of the fractals"/><title>Armemius' fractals</title><script defer="defer" src="/fractals/static/js/main.72b1851d.js"></script><link href="/fractals/static/css/main.5de9913f.css" rel="stylesheet"></head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div><script id="vertexShader" type="x-shader/x-vertex">attribute vec2 position;
+        void main() {
+            gl_Position = vec4(position, 0.0, 1.0);
+        }</script><script id="fragmentShader" type="x-shader/x-fragment">#ifdef GL_ES
+            precision highp float;
+        #endif
+
+        highp vec2 px2complex(in vec2 coord, in vec2 zeroCoord);
+        highp vec3 paint(in highp float dev);
+        highp float iterate_mandelbrot();
+        int mod(in int a, in int b);
+        highp float rand();
+
+        uniform highp vec2 resolution;
+        uniform highp vec2 offset;
+        uniform highp float scale;
+        uniform int grid;
+        uniform int noise;
+        uniform int mode;
+        uniform float time;
+
+        highp vec2 px2complex(in highp vec2 coord, in highp vec2 zeroCoord) {
+            return vec2((coord.x - zeroCoord.x) * scale * 0.01, (coord.y - zeroCoord.y) * scale * 0.01);
+        }
+
+        vec3 paint(in highp float dev) {
+            if (dev >= 1.0) {
+                return vec3(0.0, 0.0, 0.0);
+            } else if (dev >= 0.813) {
+                highp float delta = (dev - 0.813) * 5.346;
+                return vec3(32.0 - (32.0 * delta), 107.0 - (100.0 * delta), 203.0 - (103.0 * delta));
+            } else if (dev >= 0.5054) {
+                highp float delta = (dev - 0.5054) * 3.2509;
+                return vec3(237.0 - (205.0 * delta), 255.0 - (148.0 * delta), 255.0 - (52.0 * delta));
+            } else if (dev >= 0.2527) {
+                highp float delta = (dev - 0.2527) * 3.957;
+                return vec3(255.0 - (18.0 * delta), 170.0 + (85.0 * delta), 255.0 * delta);
+            }
+
+
+            highp float delta = dev * 3.957;
+            return vec3(255.0 * delta, 170.0 * delta, 0.0);
+        }
+
+        highp float iterate_mandelbrot(in vec2 coord) {
+            highp float z_im = 0.0;
+            highp float z_re = 0.0;
+
+            for (int it = 0; it < 100; ++it) {
+                highp float z_re_new = z_re * z_re - z_im * z_im + coord.x;
+                highp float z_im_new = 2.0 * z_re * z_im + coord.y;
+                z_re = z_re_new;
+                z_im = z_im_new;
+                if (z_re * z_re + z_im * z_im > 4.0) {
+                    return float(it) * 0.01;
+                }
+            }
+            return 1.0;
+        }
+
+        highp float iterate_julia(in vec2 coord) {
+            highp float c_re = -0.67;
+            highp float c_im = -0.36;
+            highp float z_re = coord.x;
+            highp float z_im = coord.y;
+            for (int it = 0; it < 100; ++it) {
+                highp float z_re_sq = z_re * z_re;
+                highp float z_im_sq = z_im * z_im;
+                if (z_re_sq + z_im_sq > 4.0) {
+                    return float(it) * 0.01;
+                }
+                highp float z_re_new = z_re_sq - z_im_sq + c_re;
+                highp float z_im_new = 2.0 * z_re * z_im + c_im;
+                z_re = z_re_new;
+                z_im = z_im_new;
+            }
+            return 1.0;
+        }
+
+        highp float iterate_flaming_ship(in vec2 coord) {
+            highp float z_re = coord.x;
+            highp float z_im = coord.y;
+
+            for (int it = 0; it < 100; ++it) {
+                highp float z_re_new = z_re * z_re - z_im * z_im + coord.x;
+                highp float z_im_new = abs(2.0 * z_re * z_im) + coord.y;
+
+                if (z_re_new * z_re_new + z_im_new * z_im_new > 4.0) {
+                    return float(it) * 0.01;
+                }
+
+                z_re = z_re_new;
+                z_im = z_im_new;
+            }
+
+            return 1.0;
+        }
+
+        vec2 divide(vec2 a, vec2 b) {
+            highp float denominator = dot(b, b);
+            highp float re = (a.x * b.x + a.y * b.y) / denominator;
+            highp float im = (a.y * b.x - a.x * b.y) / denominator;
+            return vec2(re, im);
+        }
+
+        vec2 subtract(vec2 a, vec2 b) {
+            highp float re = a.x - b.x;
+            highp float im = a.y - b.y;
+            return vec2(re, im);
+        }
+
+        vec2 multiply(vec2 a, vec2 b) {
+            highp float re = a.x * b.x - a.y * b.y;
+            highp float im = a.x * b.y + a.y * b.x;
+            return vec2(re, im);
+        }
+
+        vec2 compute_polynomial(vec2 z) {
+            vec2 result = vec2(1.0, 0.0);
+
+            vec2 root1 = vec2(1.0, 0.0);
+            vec2 root2 = vec2(-0.5, 0.866);
+            vec2 root3 = vec2(-0.5, -0.866);
+
+            vec2 term = subtract(z, root1);
+            result = multiply(result, term);
+
+            term = subtract(z, root2);
+            result = multiply(result, term);
+
+            term = subtract(z, root3);
+            result = multiply(result, term);
+
+            return result;
+        }
+
+        vec2 get_derivative(vec2 z) {
+            highp float epsilon = 0.00001;
+            vec2 z_plus_epsilon = vec2(z.x + epsilon, z.y);
+            vec2 polynomial_at_z = compute_polynomial(z);
+            vec2 polynomial_at_z_plus_epsilon = compute_polynomial(z_plus_epsilon);
+            vec2 difference = subtract(polynomial_at_z_plus_epsilon, polynomial_at_z);
+            return vec2(difference.x / epsilon, difference.y / epsilon);
+        }
+
+        highp float get_distance(vec2 a, vec2 b) {
+            highp float dx = a.x - b.x;
+            highp float dy = a.y - b.y;
+            return sqrt(dx * dx + dy * dy);
+        }
+
+        highp float iterate_newton(in vec2 coord) {
+            vec2 z_prev = vec2(0.0, 0.0);
+            vec2 z_curr = coord;
+
+            for (int it = 0; it < 100; it++) {
+                vec2 derivative = get_derivative(z_curr);
+                if (derivative.x == 0.0 && derivative.y == 0.0) {
+                    return 1.0;
+                }
+
+                vec2 delta = divide(compute_polynomial(z_curr), derivative);
+                z_prev = z_curr;
+                z_curr = subtract(z_curr, delta);
+
+                const highp float THRESHOLD = 0.001;
+                if (get_distance(z_curr, z_prev) < THRESHOLD) {
+                    return float(it) * 0.01;
+                }
+            }
+
+            return 1.0;
+        }
+
+        int mod(in int a, in int b) {
+            return a - (b * (a / b));
+        }
+
+        highp float rand() {
+            return fract(sin(dot(gl_FragCoord.xy ,vec2(12.9898,78.233))) * 43758.5453 + time);
+        }
+
+        void main() {
+            vec2 uv = gl_FragCoord.xy;
+            vec2 zeroCoord = resolution / 2.0 + offset / scale;
+
+            vec2 complex_coord = px2complex(vec2(uv.x, resolution.y - uv.y), zeroCoord);
+            if (grid == 1 && (mod(int(uv.x), 2) == 0 || mod(int(uv.y), 2) == 0)) {
+                gl_FragColor = vec4( 0.0, 0.0, 0.0, 1.0 );
+            } else if (noise == 1 && rand() > 0.5) {
+                gl_FragColor = vec4( 0.0, 0.0, 0.0, 1.0 );
+            } else if (mode == 0) {
+                highp float depth = iterate_mandelbrot(complex_coord);
+                gl_FragColor = vec4( paint(depth) / 255.0, 1.0 );
+            } else if (mode == 1) {
+                highp float depth = iterate_julia(complex_coord);
+                gl_FragColor = vec4( paint(depth) / 255.0, 1.0 );
+            } else if (mode == 2) {
+                highp float depth = iterate_flaming_ship(complex_coord);
+                gl_FragColor = vec4( paint(depth) / 255.0, 1.0 );
+            } else if (mode == 3) {
+                highp float depth = iterate_newton(complex_coord);
+                gl_FragColor = vec4( paint(depth) / 255.0, 1.0 );
+            }
+        }</script></body></html>
